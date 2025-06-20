@@ -155,28 +155,4 @@ namespace TechX.API.Services.Implementations
             public string? ProfilePicture { get; set; }
         }
     }
-} 
-                {
-                    Email = tokenInfo.GetProperty("email").GetString() ?? "",
-                    FirstName = tokenInfo.TryGetProperty("given_name", out var firstName) ? firstName.GetString() ?? "" : "",
-                    LastName = tokenInfo.TryGetProperty("family_name", out var lastName) ? lastName.GetString() ?? "" : "",
-                    ProfilePicture = tokenInfo.TryGetProperty("picture", out var picture) ? picture.GetString() : null
-                };
-            }
-            catch (Exception ex)
-            {
-                // Log the exception in a real implementation
-                Console.WriteLine($"Error verifying Google token: {ex.Message}");
-                return null;
-            }
-        }
-
-        private class GoogleUserInfo
-        {
-            public string Email { get; set; } = string.Empty;
-            public string FirstName { get; set; } = string.Empty;
-            public string LastName { get; set; } = string.Empty;
-            public string? ProfilePicture { get; set; }
-        }
-    }
-} 
+}

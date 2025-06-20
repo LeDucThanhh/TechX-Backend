@@ -207,8 +207,11 @@ catch (Exception ex)
 }
 */
 
-// Configure port for Railway deployment
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://*:{port}");
+// Configure port for Railway deployment (only in production and when PORT env var is set)
+if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT")))
+{
+    var port = Environment.GetEnvironmentVariable("PORT");
+    app.Urls.Add($"http://*:{port}");
+}
 
 app.Run(); 

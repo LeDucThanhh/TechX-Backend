@@ -25,10 +25,43 @@ bld/
 
 # Visual Studio
 .vs/
-*.ncrunch*
-*.ncrunchsolution
-*.DotSettings
-*.DotSettings.user
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet Packages
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+.env.production
 
 # ReSharper
 _ReSharper*/
@@ -76,15 +109,6 @@ publish/
 *.azurePubxml
 *.pubxml
 *.publishproj
-
-# NuGet Packages
-*.nupkg
-# The packages folder can be ignored because of Package Restore
-**/packages/*
-# except build/, which is used as an MSBuild target.
-!**/packages/build/
-# Uncomment if necessary however generally it will be regenerated when needed
-#!**/packages/repositories.config
 
 # Windows Azure Build Output
 csx/
@@ -284,10 +308,6 @@ Migrations/
 *.sql
 *.dump
 *.backup
-
-# Logs
-logs/
-*.log
 
 # Environment files
 .env

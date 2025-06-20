@@ -138,39 +138,4 @@ namespace TechX.API.Models.DTOs
         [RegularExpression(@"^\d{6}$", ErrorMessage = "OTP code must contain only digits")]
         public string OtpCode { get; set; } = string.Empty;
     }
-} 
-        [EmailAddress(ErrorMessage = "Invalid email format")]
-        [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
-        public string Email { get; set; } = string.Empty;
-    }
-
-    public class ResetPasswordRequest
-    {
-        [Required(ErrorMessage = "Reset token is required")]
-        [StringLength(500, ErrorMessage = "Invalid reset token format")]
-        public string Token { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "New password is required")]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$", 
-            ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")]
-        public string NewPassword { get; set; } = string.Empty;
-        
-        [Required(ErrorMessage = "Password confirmation is required")]
-        [Compare("NewPassword", ErrorMessage = "Password confirmation does not match")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-    }
-
-    public class VerifyOtpRequest
-    {
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
-        [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
-        public string Email { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "OTP code is required")]
-        [StringLength(6, MinimumLength = 6, ErrorMessage = "OTP code must be exactly 6 digits")]
-        [RegularExpression(@"^\d{6}$", ErrorMessage = "OTP code must contain only digits")]
-        public string OtpCode { get; set; } = string.Empty;
-    }
-} 
+}
