@@ -62,7 +62,7 @@ namespace TechX.API.Helpers
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}")
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:ExpirationMinutes"] ?? "15")),
+                Expires = DateTime.UtcNow.Add(GetTokenExpiration()),
                 Issuer = _configuration["JwtSettings:Issuer"],
                 Audience = _configuration["JwtSettings:Audience"],
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -78,6 +78,26 @@ namespace TechX.API.Helpers
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
+        }
+
+        private TimeSpan GetTokenExpiration()
+        {
+            // Try to get ExpirationMinutes first (preferred)
+            var expirationMinutes = _configuration["JwtSettings:ExpirationMinutes"];
+            if (!string.IsNullOrEmpty(expirationMinutes) && double.TryParse(expirationMinutes, out var minutes))
+            {
+                return TimeSpan.FromMinutes(minutes);
+            }
+
+            // Fallback to ExpirationHours for backward compatibility
+            var expirationHours = _configuration["JwtSettings:ExpirationHours"];
+            if (!string.IsNullOrEmpty(expirationHours) && double.TryParse(expirationHours, out var hours))
+            {
+                return TimeSpan.FromHours(hours);
+            }
+
+            // Default fallback
+            return TimeSpan.FromMinutes(15);
         }
 
         public ClaimsPrincipal? ValidateToken(string token)

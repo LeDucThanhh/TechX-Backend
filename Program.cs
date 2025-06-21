@@ -221,6 +221,7 @@ catch (Exception ex)
 if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT")))
 {
     var port = Environment.GetEnvironmentVariable("PORT");
+    app.Urls.Clear();
     app.Urls.Add($"http://*:{port}");
 }
 
