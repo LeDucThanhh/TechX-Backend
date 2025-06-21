@@ -102,19 +102,52 @@ string connectionString;
 
 if (builder.Environment.IsProduction())
 {
-    // Get DATABASE_URL from Railway environment variables
+    // Get DATABASE_URL from Railway environment variables and convert to .NET format
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
     
     if (!string.IsNullOrEmpty(databaseUrl))
     {
-        connectionString = databaseUrl;
-        Console.WriteLine($"Using Railway DATABASE_URL: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
+        Console.WriteLine($"Found Railway DATABASE_URL: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
+        
+        // Convert PostgreSQL URL to .NET connection string format
+        try
+        {
+            var uri = new Uri(databaseUrl);
+            var host = uri.Host;
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.Trim('/');
+            
+            if (string.IsNullOrEmpty(database))
+                database = "railway"; // Default database name
+            
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo.Length > 0 ? userInfo[0] : "postgres";
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            
+            // Validate required fields
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username))
+            {
+                throw new InvalidOperationException("Missing required database connection parameters");
+            }
+            
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30";
+            Console.WriteLine($"✅ Successfully converted DATABASE_URL to .NET format");
+            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error parsing DATABASE_URL: {ex.Message}");
+            Console.WriteLine($"   Original URL: {databaseUrl}");
+            // Fallback to hardcoded connection
+            connectionString = "Host=postgres.railway.internal;Database=railway;Username=postgres;Password=QvTwobWAnPApraKSyHULicWOsfbokigo;Port=5432;SSL Mode=Require;Trust Server Certificate=true;Timeout=30";
+            Console.WriteLine("   Using fallback connection string");
+        }
     }
     else
     {
         // Fallback to hardcoded connection
         connectionString = "Host=postgres.railway.internal;Database=railway;Username=postgres;Password=QvTwobWAnPApraKSyHULicWOsfbokigo;Port=5432;SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("Using fallback connection string");
+        Console.WriteLine("DATABASE_URL not found, using fallback connection string");
     }
 }
 else
