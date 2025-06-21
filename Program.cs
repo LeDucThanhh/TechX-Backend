@@ -97,32 +97,10 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Handle Railway connection strings
-string? connectionString;
-if (builder.Environment.IsProduction())
-{
-    // Try multiple Railway connection string sources
-    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
-                    ?? Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection")
-                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
-                    
-    // Fix Railway's malformed sslmode parameter
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        if (connectionString.EndsWith("?sslmode"))
-        {
-            connectionString = connectionString.Replace("?sslmode", "?sslmode=Disable");
-        }
-        else if (!connectionString.Contains("sslmode"))
-        {
-            connectionString += connectionString.Contains("?") ? "&sslmode=Disable" : "?sslmode=Disable";
-        }
-    }
-}
-else
-{
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-}
+// Add DbContext - Simple approach
+var connectionString = builder.Environment.IsProduction() 
+    ? Environment.GetEnvironmentVariable("DATABASE_URL")?.Replace("?sslmode", "?sslmode=disable") ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    : builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
