@@ -12,10 +12,12 @@ namespace TechX.API.Controllers
     public class StoreController : ControllerBase
     {
         private readonly IStoreService _storeService;
+        private readonly ILogger<StoreController> _logger;
 
-        public StoreController(IStoreService storeService)
+        public StoreController(IStoreService storeService, ILogger<StoreController> logger)
         {
             _storeService = storeService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -23,12 +25,19 @@ namespace TechX.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting all stores");
                 var stores = await _storeService.GetAllStoresAsync();
+                _logger.LogInformation("Retrieved {Count} stores", stores.Count());
                 return Ok(stores);
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving stores" });
+                _logger.LogError(ex, "Error occurred while retrieving stores");
+                return StatusCode(500, new { 
+                    message = "An error occurred while retrieving stores",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
             }
         }
 

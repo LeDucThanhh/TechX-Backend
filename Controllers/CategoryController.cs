@@ -12,10 +12,12 @@ namespace TechX.API.Controllers
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
+        private readonly ILogger<CategoryController> _logger;
 
-        public CategoryController(ICategoryService categoryService)
+        public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
         {
             _categoryService = categoryService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -23,12 +25,19 @@ namespace TechX.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting all categories");
                 var categories = await _categoryService.GetAllCategoriesAsync();
+                _logger.LogInformation("Retrieved {Count} categories", categories.Count());
                 return Ok(categories);
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving categories" });
+                _logger.LogError(ex, "Error occurred while retrieving categories");
+                return StatusCode(500, new { 
+                    message = "An error occurred while retrieving categories",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
             }
         }
 

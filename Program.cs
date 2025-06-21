@@ -106,7 +106,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
         o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
-// Add CORS policy
+// Add CORS policy for mobile apps
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultPolicy",
@@ -120,13 +120,16 @@ builder.Services.AddCors(options =>
             }
             else
             {
-                policy.WithOrigins(
-                        "https://techx-backend-api.azurewebsites.net",
-                    "https://techx.com"
-                )
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
+                // Allow mobile apps and web clients
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+                      
+                // Note: For production with credentials, specify exact origins
+                // policy.WithOrigins("https://yourapp.com", "https://localhost")
+                //       .AllowAnyMethod()
+                //       .AllowAnyHeader()
+                //       .AllowCredentials();
             }
         });
 });
@@ -151,12 +154,15 @@ builder.Logging.ClearProviders();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Enable Swagger for all environments to help with API testing
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
+    c.RoutePrefix = "swagger";
+});
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
     
