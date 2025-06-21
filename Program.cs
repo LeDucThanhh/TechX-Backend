@@ -97,32 +97,10 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Force fix Railway DATABASE_URL  
-string? connectionString;
-if (builder.Environment.IsProduction())
-{
-    // Get Railway connection string and force fix malformed sslmode
-    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
-                    ?? Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection")
-                    ?? "postgresql://postgres:QvTwobWAnPApraKSyHULicWOsfbokigo@tramway.proxy.rlwy.net:47475/railway?sslmode=disable";
-    
-    // Force fix any malformed ?sslmode (no value)
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        if (connectionString.EndsWith("?sslmode"))
-        {
-            connectionString = connectionString.Replace("?sslmode", "?sslmode=disable");
-        }
-        else if (connectionString.Contains("?sslmode=") == false && connectionString.Contains("sslmode") == false)
-        {
-            connectionString += "?sslmode=disable";
-        }
-    }
-}
-else
-{
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-}
+// Add DbContext - Force use appsettings (bypass environment variables)
+var connectionString = builder.Environment.IsProduction() 
+    ? "postgresql://postgres:QvTwobWAnPApraKSyHULicWOsfbokigo@postgres.railway.internal:5432/railway"
+    : builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
