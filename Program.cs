@@ -203,19 +203,25 @@ app.MapHealthChecks("/health");
 
 app.MapControllers();
 
-// Apply database migrations (DISABLED because database is managed manually)
-/*
+// Apply database migrations automatically for Railway deployment
 try
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    
+    // Only run migrations in production (Railway)
+    if (app.Environment.IsProduction())
+    {
+        Log.Information("Running database migrations for production...");
+        context.Database.Migrate();
+        Log.Information("Database migrations completed successfully.");
+    }
 }
 catch (Exception ex)
 {
-    Log.Error(ex, "An error occurred while applying database migrations.");
+    Log.Error(ex, "An error occurred while applying database migrations: {ErrorMessage}", ex.Message);
+    // Don't crash the app, let it continue without migrations
 }
-*/
 
 // Configure port for Railway deployment (only in production and when PORT env var is set)
 if (app.Environment.IsProduction() && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT")))

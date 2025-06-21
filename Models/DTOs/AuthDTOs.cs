@@ -80,7 +80,7 @@ namespace TechX.API.Models.DTOs
     public class GoogleAuthDTO
     {
         [Required(ErrorMessage = "Google token is required")]
-        [StringLength(2000, MinimumLength = 100, ErrorMessage = "Invalid Google token format")]
+        [StringLength(5000, MinimumLength = 50, ErrorMessage = "Invalid Google token format")]
         public string GoogleToken { get; set; } = string.Empty;
     }
 

@@ -25,21 +25,40 @@ namespace TechX.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState));
+                return BadRequest(new { 
+                    success = false,
+                    message = "Validation failed",
+                    errors = TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState)
+                });
             }
 
             try
             {
                 var result = await _authService.RegisterAsync(registerDto);
-                return Ok(result);
+                return Ok(new {
+                    success = true,
+                    message = "Registration successful",
+                    data = result
+                });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { 
+                    success = false,
+                    message = ex.Message 
+                });
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred during registration" });
+                // Log the full error for debugging
+                Console.WriteLine($"Registration error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                return StatusCode(500, new { 
+                    success = false,
+                    message = "Database connection error. Please try again.",
+                    error = ex.Message // Include error details for debugging
+                });
             }
         }
 
@@ -48,21 +67,40 @@ namespace TechX.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState));
+                return BadRequest(new { 
+                    success = false,
+                    message = "Validation failed",
+                    errors = TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState)
+                });
             }
 
             try
             {
                 var result = await _authService.LoginAsync(loginDto);
-                return Ok(result);
+                return Ok(new {
+                    success = true,
+                    message = "Login successful",
+                    data = result
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { 
+                    success = false,
+                    message = ex.Message 
+                });
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred during login" });
+                // Log the full error for debugging
+                Console.WriteLine($"Login error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                return StatusCode(500, new { 
+                    success = false,
+                    message = "Database connection error. Please try again.",
+                    error = ex.Message // Include error details for debugging
+                });
             }
         }
 
@@ -113,21 +151,39 @@ namespace TechX.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState));
+                return BadRequest(new { 
+                    success = false,
+                    message = "Validation failed",
+                    errors = TechX.API.Helpers.ValidationHelper.GetValidationErrors(ModelState)
+                });
             }
 
             try
             {
                 var result = await _googleAuthService.AuthenticateWithGoogleAsync(googleAuthDto.GoogleToken);
-                return Ok(result);
+                return Ok(new {
+                    success = true,
+                    message = "Google authentication successful",
+                    data = result
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { 
+                    success = false,
+                    message = ex.Message 
+                });
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred during Google authentication" });
+                // Log the full error for debugging
+                Console.WriteLine($"Google auth error: {ex.Message}");
+                
+                return StatusCode(500, new { 
+                    success = false,
+                    message = "Google authentication error. Please try again.",
+                    error = ex.Message
+                });
             }
         }
 

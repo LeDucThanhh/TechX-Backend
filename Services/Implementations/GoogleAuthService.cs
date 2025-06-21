@@ -33,15 +33,30 @@ namespace TechX.API.Services.Implementations
 
         public async Task<AuthResponseDTO> AuthenticateWithGoogleAsync(string googleToken)
         {
-            var googleUserInfo = await VerifyGoogleTokenAsync(googleToken);
+            GoogleUserInfo? googleUserInfo = null;
             
-            if (googleUserInfo == null)
+            try
             {
-                throw new UnauthorizedAccessException("Invalid Google token");
+                Console.WriteLine($"Attempting Google auth with token: {googleToken.Substring(0, Math.Min(50, googleToken.Length))}...");
+                
+                googleUserInfo = await VerifyGoogleTokenAsync(googleToken);
+                
+                if (googleUserInfo == null)
+                {
+                    Console.WriteLine("Google token verification failed");
+                    throw new UnauthorizedAccessException("Invalid Google token. Please try signing in again.");
+                }
+                
+                Console.WriteLine($"Google auth successful for: {googleUserInfo.Email}");
+            }
+            catch (Exception ex) when (!(ex is UnauthorizedAccessException))
+            {
+                Console.WriteLine($"Google auth error: {ex.Message}");
+                throw new UnauthorizedAccessException($"Google authentication failed: {ex.Message}");
             }
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == googleUserInfo.Email);
+                .FirstOrDefaultAsync(u => u.Email == googleUserInfo.Email || u.GoogleId == googleUserInfo.GoogleId);
 
             if (user == null)
             {
@@ -52,13 +67,25 @@ namespace TechX.API.Services.Implementations
                     FirstName = googleUserInfo.FirstName,
                     LastName = googleUserInfo.LastName,
                     Avatar = googleUserInfo.ProfilePicture,
+                    GoogleId = googleUserInfo.GoogleId,
+                    GooglePicture = googleUserInfo.ProfilePicture,
                     IsActive = true,
+                    IsEmailVerified = true, // Google emails are verified
                     AuthProvider = "Google",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+            else if (user.AuthProvider == "Email" && string.IsNullOrEmpty(user.GoogleId))
+            {
+                // Link existing email account with Google
+                user.GoogleId = googleUserInfo.GoogleId;
+                user.GooglePicture = googleUserInfo.ProfilePicture;
+                user.IsEmailVerified = true;
+                user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
 
@@ -79,7 +106,15 @@ namespace TechX.API.Services.Implementations
                     DateOfBirth = user.DateOfBirth,
                     Gender = user.Gender,
                     ProfilePicture = user.Avatar,
+                    Address = user.Address,
+                    IsEmailVerified = user.IsEmailVerified,
+                    IsPhoneVerified = user.IsPhoneVerified,
+                    Preferences = user.Preferences,
+                    LastLoginAt = user.LastLoginAt,
                     IsActive = user.IsActive,
+                    GoogleId = user.GoogleId,
+                    GooglePicture = user.GooglePicture,
+                    AuthProvider = user.AuthProvider,
                     CreatedAt = user.CreatedAt,
                     UpdatedAt = user.UpdatedAt
                 }
@@ -133,6 +168,7 @@ namespace TechX.API.Services.Implementations
                 // Extract user information
                 return new GoogleUserInfo
                 {
+                    GoogleId = tokenInfo.GetProperty("sub").GetString() ?? "", // 'sub' is the Google user ID
                     Email = tokenInfo.GetProperty("email").GetString() ?? "",
                     FirstName = tokenInfo.TryGetProperty("given_name", out var firstName) ? firstName.GetString() ?? "" : "",
                     LastName = tokenInfo.TryGetProperty("family_name", out var lastName) ? lastName.GetString() ?? "" : "",
@@ -149,6 +185,7 @@ namespace TechX.API.Services.Implementations
 
         private class GoogleUserInfo
         {
+            public string GoogleId { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
             public string FirstName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
