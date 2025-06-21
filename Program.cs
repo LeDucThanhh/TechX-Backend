@@ -97,17 +97,25 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Handle Railway database connection properly
+// Add DbContext - Use Railway DATABASE_URL environment variable
 string connectionString;
 
 if (builder.Environment.IsProduction())
 {
-    // Try Railway DATABASE_URL first, then fallback to hardcoded connection
-    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
-        ?? "postgresql://postgres:QvTwobWAnPApraKSyHULicWOsfbokigo@postgres.railway.internal:5432/railway";
+    // Get DATABASE_URL from Railway environment variables
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
     
-    // Log the connection attempt
-    Console.WriteLine($"Using production database connection (Railway)");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        connectionString = databaseUrl;
+        Console.WriteLine($"Using Railway DATABASE_URL: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
+    }
+    else
+    {
+        // Fallback to hardcoded connection
+        connectionString = "Host=postgres.railway.internal;Database=railway;Username=postgres;Password=QvTwobWAnPApraKSyHULicWOsfbokigo;Port=5432;SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine("Using fallback connection string");
+    }
 }
 else
 {
