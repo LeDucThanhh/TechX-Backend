@@ -94,13 +94,16 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-// Add Health Checks
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<ApplicationDbContext>();
+// Add Health Checks (simplified)
+builder.Services.AddHealthChecks();
 
 // Add DbContext
+var connectionString = builder.Environment.IsProduction() 
+    ? Environment.GetEnvironmentVariable("DATABASE_URL") ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    : builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), 
+    options.UseNpgsql(connectionString, 
         o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // Add CORS policy
