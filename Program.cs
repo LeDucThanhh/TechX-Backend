@@ -99,7 +99,7 @@ builder.Services.AddHealthChecks();
 
 // Add DbContext
 var connectionString = builder.Environment.IsProduction() 
-    ? Environment.GetEnvironmentVariable("DATABASE_URL") ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ? (Environment.GetEnvironmentVariable("DATABASE_URL") ?? builder.Configuration.GetConnectionString("DefaultConnection"))?.Replace("?sslmode", "?sslmode=Disable")
     : builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -159,21 +159,25 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
-    c.RoutePrefix = "swagger";
+    c.RoutePrefix = string.Empty; // Serve Swagger UI at root path
 });
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
     
-    // Add security headers for production
+    // Add security headers for production (relaxed for Swagger)
     app.Use(async (context, next) =>
     {
-        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-        context.Response.Headers["X-Frame-Options"] = "DENY";
-        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
-        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-        context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
+        // Skip security headers for Swagger endpoints
+        if (!context.Request.Path.StartsWithSegments("/swagger"))
+        {
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
+        }
         await next();
     });
 }
