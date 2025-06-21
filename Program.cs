@@ -97,14 +97,38 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Force use appsettings (bypass environment variables)
-var connectionString = builder.Environment.IsProduction() 
-    ? "postgresql://postgres:QvTwobWAnPApraKSyHULicWOsfbokigo@postgres.railway.internal:5432/railway"
-    : builder.Configuration.GetConnectionString("DefaultConnection");
+// Add DbContext - Handle Railway database connection properly
+string connectionString;
+
+if (builder.Environment.IsProduction())
+{
+    // Try Railway DATABASE_URL first, then fallback to hardcoded connection
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+        ?? "postgresql://postgres:QvTwobWAnPApraKSyHULicWOsfbokigo@postgres.railway.internal:5432/railway";
+    
+    // Log the connection attempt
+    Console.WriteLine($"Using production database connection (Railway)");
+}
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("DefaultConnection not found in configuration.");
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString, 
-        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+{
+    try
+    {
+        Console.WriteLine($"Configuring database with connection string: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
+        options.UseNpgsql(connectionString, 
+            o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database configuration error: {ex.Message}");
+        throw;
+    }
+});
 
 // Add CORS policy for mobile apps
 builder.Services.AddCors(options =>
