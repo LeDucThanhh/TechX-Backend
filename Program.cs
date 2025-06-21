@@ -97,10 +97,32 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Simple Railway DATABASE_URL fix
-var connectionString = builder.Environment.IsProduction() 
-    ? Environment.GetEnvironmentVariable("DATABASE_URL")?.Replace("?sslmode", "?sslmode=Disable")
-    : builder.Configuration.GetConnectionString("DefaultConnection");
+// Add DbContext - Handle Railway connection strings
+string? connectionString;
+if (builder.Environment.IsProduction())
+{
+    // Try multiple Railway connection string sources
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
+                    ?? Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection")
+                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+                    
+    // Fix Railway's malformed sslmode parameter
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        if (connectionString.EndsWith("?sslmode"))
+        {
+            connectionString = connectionString.Replace("?sslmode", "?sslmode=Disable");
+        }
+        else if (!connectionString.Contains("sslmode"))
+        {
+            connectionString += connectionString.Contains("?") ? "&sslmode=Disable" : "?sslmode=Disable";
+        }
+    }
+}
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
@@ -154,29 +176,44 @@ builder.Logging.ClearProviders();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-// Enable Swagger for all environments to help with API testing
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
-    c.RoutePrefix = "swagger"; // Serve Swagger UI at /swagger
-});
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
-    
-    // Add security headers for production (relaxed for Swagger)
+}
+
+// Enable Swagger for all environments (including production)
+app.UseSwagger(c =>
+{
+    c.RouteTemplate = "swagger/{documentName}/swagger.json";
+});
+
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
+    c.RoutePrefix = "swagger";
+    c.DocumentTitle = "TechX Backend API Documentation";
+    c.DefaultModelsExpandDepth(-1);
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+});
+
+// Add security headers for production (allow Swagger)
+if (!app.Environment.IsDevelopment())
+{
     app.Use(async (context, next) =>
     {
-        // Skip security headers for Swagger endpoints
-        if (!context.Request.Path.StartsWithSegments("/swagger"))
+        // Allow Swagger UI and API calls
+        if (context.Request.Path.StartsWithSegments("/swagger") || 
+            context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+        }
+        else
         {
             context.Response.Headers["X-Content-Type-Options"] = "nosniff";
             context.Response.Headers["X-Frame-Options"] = "DENY";
             context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
             context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
         }
         await next();
     });
