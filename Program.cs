@@ -101,7 +101,8 @@ builder.Services.AddHealthChecks();
 var connectionString = "";
 
 // SUPABASE CONNECTION (MUCH MORE RELIABLE)
-var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING");
+var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING") 
+                  ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(supabaseUrl))
 {
@@ -110,9 +111,9 @@ if (!string.IsNullOrEmpty(supabaseUrl))
 }
 else
 {
-    // Local development fallback with null safety
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Host=localhost;Database=techx_db;Username=postgres;Password=admin123;Port=5432";
-    Console.WriteLine("🔵 Using local database connection");
+    // PRODUCTION FALLBACK - hardcoded Supabase connection
+    connectionString = "postgresql://postgres:YEDrCrRUuOkT6LQE@db.rvkrhsfkcfawmobywexf.supabase.co:5432/postgres";
+    Console.WriteLine("🟡 Using hardcoded Supabase connection");
 }
 
 Console.WriteLine($"✅ Database connection configured successfully");
