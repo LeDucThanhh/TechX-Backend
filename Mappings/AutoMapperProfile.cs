@@ -13,12 +13,15 @@ namespace TechX.API.Mappings
             CreateMap<Category, CategoryDTO>();
             CreateMap<Budget, BudgetDTO>();
             CreateMap<CashbackTransaction, CashbackTransactionDTO>();
-            CreateMap<LoyaltyPoints, LoyaltyPointsDTO>();
+            CreateMap<LoyaltyPoint, LoyaltyPointsDTO>().ReverseMap();
+            CreateMap<CreateLoyaltyPointsDTO, LoyaltyPoint>();
+            CreateMap<UpdateLoyaltyPointsDTO, LoyaltyPoint>();
             CreateMap<Store, StoreDTO>();
             CreateMap<Transaction, TransactionDTO>();
             CreateMap<Notification, NotificationDTO>();
             CreateMap<Review, ReviewDTO>();
-            CreateMap<Settings, SettingsDTO>();
+            CreateMap<Setting, SettingsDTO>().ReverseMap();
+            CreateMap<UpdateSettingsDTO, Setting>();
             CreateMap<Item, ItemDTO>();
             CreateMap<Receipt, ReceiptDTO>();
             CreateMap<ReceiptItem, ReceiptItemDTO>();

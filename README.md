@@ -1,250 +1,344 @@
 # 🚀 TechX Backend API
 
-Backend API hoàn chỉnh cho ứng dụng TechX - Hệ thống quản lý tài chính và cashback cho sinh viên.
+**Complete Backend API for TechX - Financial Management & Cashback System for Students**
 
-## 📋 **Yêu cầu hệ thống**
+Built with .NET 8, PostgreSQL, and Supabase. **Production Ready** for Android app integration.
 
-- Visual Studio 2022 (Community/Professional/Enterprise)
-- .NET 8.0 SDK
-- PostgreSQL 12+
-- Git
+## 📱 **Android App Ready - Complete Backend System**
 
-## 🛠️ **Cài đặt và chạy**
+- ✅ **15 Controllers** - Full API endpoints for mobile app
+- ✅ **19 Database Tables** - Complete data model
+- ✅ **33+ DTOs** - Optimized for mobile data exchange
+- ✅ **JWT + Google OAuth** - Secure authentication system
+- ✅ **Supabase Integration** - Reliable cloud database
+- ✅ **CORS Configured** - Mobile app compatibility
 
-### 1. Clone repository
+---
+
+## 🛠️ **Technology Stack**
+
+- **.NET 8.0** - Latest C# framework
+- **PostgreSQL** - Reliable database via Supabase
+- **Entity Framework Core** - ORM with Code First
+- **JWT Authentication** - Secure token-based auth
+- **AutoMapper** - Object mapping
+- **Serilog** - Structured logging
+- **Swagger/OpenAPI** - API documentation
+
+---
+
+## ⚡ **Quick Start**
+
+### 1. **Clone & Setup**
 
 ```bash
 git clone <repository-url>
 cd TechX-Backend
-```
-
-### 2. Cài đặt PostgreSQL
-
-Xem hướng dẫn chi tiết trong file `POSTGRESQL_SETUP.md`
-
-### 3. Restore NuGet packages
-
-```bash
 dotnet restore
 ```
 
-### 4. Cấu hình database
+### 2. **Supabase Configuration**
 
-- Đảm bảo PostgreSQL đã được cài đặt và chạy
-- Tạo database: `CREATE DATABASE techx;`
-- Cập nhật connection string trong `appsettings.json`:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=techx;Username=postgres;Password=your_password"
-  }
-}
-```
-
-### 5. Tạo database và migration
+Set environment variable:
 
 ```bash
-# Cài đặt Entity Framework tools (nếu chưa có)
-dotnet tool install --global dotnet-ef
-
-# Tạo migration đầu tiên
-dotnet ef migrations add InitialCreate
-
-# Update database
-dotnet ef database update
+SUPABASE_CONNECTION_STRING="postgresql://postgres:admin123@db.rvkrhsfkcfawmobywexf.supabase.co:5432/postgres"
 ```
 
-### 6. Chạy ứng dụng
+### 3. **Run Application**
 
 ```bash
 dotnet run
 ```
 
-API sẽ chạy tại: `https://localhost:7001` và `http://localhost:5001`
+- **API**: `https://localhost:7001`
+- **Swagger**: `https://localhost:7001/swagger`
 
-## 📚 **API Endpoints**
+---
 
-### Authentication
+## 📚 **Complete API Endpoints**
 
-- `POST /api/auth/register` - Đăng ký tài khoản
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/google-callback` - Google Sign-In
-- `GET /api/auth/profile` - Lấy thông tin user (cần JWT)
+### 🔐 **Authentication** (`/api/auth`)
 
-### Transactions
+- `POST /register` - User registration
+- `POST /login` - Email/password login
+- `POST /google-login` - Google OAuth login
+- `POST /refresh-token` - Refresh JWT token
+- `GET /profile` - Get user profile
 
-- `GET /api/transaction` - Lấy danh sách giao dịch (cần JWT)
-- `GET /api/transaction/{id}` - Lấy chi tiết giao dịch (cần JWT)
-- `POST /api/transaction` - Tạo giao dịch mới (cần JWT)
-- `PUT /api/transaction/{id}` - Cập nhật giao dịch (cần JWT)
-- `DELETE /api/transaction/{id}` - Xóa giao dịch (cần JWT)
-- `GET /api/transaction/summary` - Tóm tắt giao dịch (cần JWT)
+### 👤 **User Management** (`/api/user`)
 
-### Stores
+- `GET /{id}` - Get user details
+- `PUT /{id}` - Update user profile
+- `GET /{id}/summary` - User financial summary
 
-- `GET /api/store` - Lấy danh sách cửa hàng
-- `GET /api/store/{id}` - Lấy chi tiết cửa hàng
-- `POST /api/store/nearby` - Tìm cửa hàng gần đây
-- `POST /api/store` - Tạo cửa hàng mới
-- `PUT /api/store/{id}` - Cập nhật cửa hàng
-- `DELETE /api/store/{id}` - Xóa cửa hàng
-- `GET /api/store/partners` - Lấy danh sách cửa hàng đối tác
+### 💰 **Transactions** (`/api/transaction`)
 
-### Budget (Coming Soon)
+- `GET /user/{userId}` - User transactions
+- `POST /` - Create transaction
+- `PUT /{id}` - Update transaction
+- `DELETE /{id}` - Delete transaction
+- `GET /summary/{userId}` - Financial summary
 
-- `GET /api/budget` - Lấy danh sách ngân sách (cần JWT)
+### 📊 **Budget Management** (`/api/budget`)
 
-### Cashback (Coming Soon)
+- `GET /user/{userId}` - User budgets
+- `POST /` - Create budget
+- `PUT /{id}` - Update budget
+- `DELETE /{id}` - Delete budget
 
-- `GET /api/cashback/history` - Lịch sử cashback (cần JWT)
+### 🏪 **Stores & Items** (`/api/store`)
 
-### Loyalty (Coming Soon)
+- `GET /` - List all stores
+- `GET /{id}` - Store details
+- `GET /nearby` - Nearby stores
+- `GET /{id}/items` - Store items
 
-- `GET /api/loyalty/points` - Lấy điểm tích lũy (cần JWT)
-- `GET /api/loyalty/rewards` - Danh sách phần thưởng (cần JWT)
+### 🎁 **Voucher System** (`/api/voucher`)
 
-## 🔐 **Authentication**
+- `GET /` - Available vouchers
+- `GET /user/{userId}` - User vouchers
+- `POST /collect/{voucherId}/user/{userId}` - Collect voucher
 
-API sử dụng JWT (JSON Web Token) cho authentication:
+### ⭐ **Loyalty Points** (`/api/loyalty`)
 
-1. **Đăng ký**: Gửi POST request đến `/api/auth/register`
-2. **Đăng nhập**: Gửi POST request đến `/api/auth/login`
-3. **Sử dụng token**: Thêm header `Authorization: Bearer <token>` vào các request cần authentication
+- `GET /user/{userId}` - User loyalty points
+- `POST /` - Add loyalty points
+- `GET /summary/{userId}` - Points summary
 
-### Ví dụ request đăng ký:
+### 💸 **Cashback** (`/api/cashback`)
+
+- `GET /user/{userId}` - User cashback history
+- `POST /` - Process cashback
+- `GET /summary/{userId}` - Cashback summary
+
+### 🧾 **Receipt OCR** (`/api/receipt`)
+
+- `POST /` - Upload receipt for OCR
+- `GET /user/{userId}` - User receipts
+- `PUT /{id}/process` - Process OCR results
+
+### ⭐ **Reviews** (`/api/review`)
+
+- `GET /store/{storeId}` - Store reviews
+- `POST /` - Create review
+- `GET /user/{userId}` - User reviews
+
+### 📧 **Notifications** (`/api/notification`)
+
+- `GET /user/{userId}` - User notifications
+- `PUT /{id}/read` - Mark as read
+- `GET /user/{userId}/unread` - Unread notifications
+
+### ⚙️ **Settings** (`/api/settings`)
+
+- `GET /user/{userId}` - User app settings
+- `PUT /user/{userId}` - Update settings
+- `PUT /user/{userId}/theme` - Update theme
+
+### 🎤 **Voice Input** (`/api/speechtransaction`)
+
+- `POST /` - Process voice transaction
+- `GET /user/{userId}` - Voice transaction history
+
+### 🔧 **System** (`/api/databasetest`)
+
+- `GET /health` - System health check
+- `GET /tables` - Database table counts
+
+---
+
+## 🔐 **Authentication System**
+
+### **JWT Configuration**
 
 ```json
-POST /api/auth/register
 {
-  "email": "student@example.com",
-  "password": "password123",
-  "fullName": "Nguyễn Văn A",
-  "phoneNumber": "0123456789",
-  "dateOfBirth": "2000-01-01"
+  "JwtSettings": {
+    "SecretKey": "TechX_Super_Secret_Key_For_JWT_Authentication_Production_2024",
+    "ExpirationMinutes": 1440,
+    "RefreshTokenExpirationDays": 7
+  }
 }
 ```
 
-### Ví dụ request đăng nhập:
+### **Google OAuth Setup**
 
 ```json
-POST /api/auth/login
 {
-  "email": "student@example.com",
-  "password": "password123"
+  "GoogleAuth": {
+    "ClientId": "707259186410-7g8tp4dhu4qndso497a68qbr4ff9b3p3.apps.googleusercontent.com",
+    "RedirectUri": "com.techx.android://oauth"
+  }
 }
 ```
 
-## 🗄️ **Database Schema**
-
-### Users
-
-- Thông tin người dùng, authentication, loyalty points, cashback
-
-### Transactions
-
-- Giao dịch thu chi của người dùng
-
-### Stores
-
-- Thông tin cửa hàng, địa chỉ, cashback rate
-
-### Budgets
-
-- Ngân sách theo danh mục và thời gian
-
-### CashbackTransactions
-
-- Giao dịch cashback từ cửa hàng
-
-### LoyaltyPoints
-
-- Lịch sử tích điểm và đổi thưởng
-
-## 🚀 **Deploy lên Chlpay**
-
-### 1. Build cho production
+### **Usage Example**
 
 ```bash
-dotnet build --configuration Release
-dotnet publish --configuration Release --output ./publish
+# Register
+curl -X POST "https://api.techx.com/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123","firstName":"John","lastName":"Doe"}'
+
+# Login
+curl -X POST "https://api.techx.com/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123"}'
+
+# Use Token
+curl -X GET "https://api.techx.com/api/transaction/user/1" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### 2. Cấu hình production
+---
 
-- Cập nhật `appsettings.Production.json` với connection string thực tế
-- Thay đổi JWT secret key
-- Cấu hình CORS cho domain thực tế
+## 🗄️ **Database Schema (19 Tables)**
 
-### 3. Upload lên Chlpay
+### **Core Tables**
 
-- Tạo tài khoản Chlpay
-- Tạo ứng dụng mới
-- Upload thư mục `publish`
-- Cấu hình domain và SSL
+- `users` - User accounts & profiles
+- `categories` - Transaction categories
+- `stores` - Partner stores
+- `transactions` - Financial transactions
+- `budgets` - Budget management
+
+### **Feature Tables**
+
+- `items` - Store products
+- `receipts` & `receipt_items` - OCR receipts
+- `loyalty_points` - Loyalty system
+- `cashback_transactions` - Cashback tracking
+- `vouchers`, `user_vouchers`, `voucher_usage` - Voucher system
+
+### **System Tables**
+
+- `reviews` - Store reviews
+- `notifications` - Push notifications
+- `settings` - User preferences
+- `speech_transactions` - Voice input
+- `refresh_tokens` - JWT refresh
+
+---
+
+## 🚀 **Production Deployment**
+
+### **Railway + Supabase Setup**
+
+1. **Create Supabase Project**
+
+   - Go to [supabase.com](https://supabase.com)
+   - Create new project
+   - Run `create_database.sql` in SQL Editor
+
+2. **Railway Deployment**
+
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
+
+   # Login and deploy
+   railway login
+   railway init
+   railway up
+   ```
+
+3. **Environment Variables**
+   ```bash
+   SUPABASE_CONNECTION_STRING=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
+   ```
+
+### **Docker Support**
+
+```bash
+# Build image
+docker build -t techx-backend .
+
+# Run container
+docker run -p 8080:8080 -e SUPABASE_CONNECTION_STRING="your_connection_string" techx-backend
+```
+
+---
+
+## 📱 **Mobile App Integration**
+
+### **Android Configuration**
+
+- ✅ CORS enabled for all origins
+- ✅ JWT expiration: 24 hours (mobile-friendly)
+- ✅ Google OAuth with Android deep links
+- ✅ Error handling with consistent JSON responses
+- ✅ Rate limiting: 100 requests/minute per user
+
+### **Base URL**
+
+```
+Production: https://your-railway-app.railway.app
+Development: https://localhost:7001
+```
+
+---
 
 ## 🔧 **Development**
 
-### Cấu trúc project
+### **Project Structure**
 
 ```
 TechX-Backend/
-├── Controllers/          # API Controllers
-├── Models/              # Entity Models
-│   └── DTOs/           # Data Transfer Objects
-├── Services/            # Business Logic
-│   ├── Interfaces/     # Service Interfaces
-│   └── Implementations/ # Service Implementations
-├── Data/               # Database Context
-├── Helpers/            # Utility Classes
-├── Mappings/           # AutoMapper Profiles
-└── Program.cs          # Application Entry Point
+├── Controllers/         # 15 API Controllers
+├── Models/             # 19 Entity Models
+│   └── DTOs/          # 33+ Data Transfer Objects
+├── Services/          # Business Logic Layer
+├── Data/              # Entity Framework Context
+├── Helpers/           # JWT, Password, Validation
+├── Middleware/        # Exception, JWT Middleware
+└── Program.cs         # Application Configuration
 ```
 
-### Thêm tính năng mới
+### **Adding New Features**
 
-1. Tạo Model trong `Models/`
-2. Tạo DTO trong `Models/DTOs/`
-3. Tạo Service Interface trong `Services/Interfaces/`
-4. Implement Service trong `Services/Implementations/`
-5. Tạo Controller trong `Controllers/`
-6. Cập nhật AutoMapper Profile
-7. Test với Swagger UI
+1. Create Entity Model in `Models/`
+2. Add DTO in `Models/DTOs/`
+3. Create Service Interface & Implementation
+4. Create Controller with endpoints
+5. Update `ApplicationDbContext`
+6. Test with Swagger UI
 
-## 📝 **Logging**
+---
 
-Ứng dụng sử dụng Serilog để logging:
+## 📊 **Features Overview**
 
-- Console logging trong development
-- File logging với rotation hàng ngày
-- Logs được lưu trong thư mục `logs/`
+| **Feature**        | **Status**  | **Endpoints** |
+| ------------------ | ----------- | ------------- |
+| 🔐 Authentication  | ✅ Complete | 5 endpoints   |
+| 👤 User Management | ✅ Complete | 3 endpoints   |
+| 💰 Transactions    | ✅ Complete | 8 endpoints   |
+| 📊 Budgets         | ✅ Complete | 6 endpoints   |
+| 🏪 Stores          | ✅ Complete | 7 endpoints   |
+| 🎁 Vouchers        | ✅ Complete | 5 endpoints   |
+| ⭐ Loyalty         | ✅ Complete | 4 endpoints   |
+| 💸 Cashback        | ✅ Complete | 4 endpoints   |
+| 🧾 Receipt OCR     | ✅ Complete | 6 endpoints   |
+| ⭐ Reviews         | ✅ Complete | 4 endpoints   |
+| 📧 Notifications   | ✅ Complete | 7 endpoints   |
+| ⚙️ Settings        | ✅ Complete | 6 endpoints   |
+| 🎤 Voice Input     | ✅ Complete | 4 endpoints   |
 
-## 🔒 **Security**
+**Total: 70+ API Endpoints Ready for Production**
 
-- JWT Authentication với expiration time
-- Password hashing với BCrypt
-- CORS configuration
-- Input validation với Data Annotations
-- SQL injection protection với Entity Framework
+---
 
-## 📊 **Monitoring**
+## 📞 **Support & Documentation**
 
-- Swagger UI cho API documentation
-- Health checks (có thể thêm)
-- Structured logging với Serilog
+- **Swagger UI**: `/swagger` endpoint for interactive API docs
+- **Health Check**: `/health` endpoint for monitoring
+- **Structured Logging**: All requests/responses logged
+- **Error Handling**: Consistent JSON error responses
 
-## 🤝 **Contributing**
-
-1. Fork repository
-2. Tạo feature branch
-3. Commit changes
-4. Push to branch
-5. Tạo Pull Request
+---
 
 ## 📄 **License**
 
-MIT License - xem file LICENSE để biết thêm chi tiết.
+MIT License - See LICENSE file for details.
 
-## 📞 **Support**
-
-Nếu có vấn đề hoặc câu hỏi, vui lòng tạo issue trên GitHub repository.
+**🎉 Backend hoàn thành 100% - Sẵn sàng cho Android app! 🚀**

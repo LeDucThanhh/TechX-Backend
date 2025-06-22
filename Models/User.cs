@@ -9,82 +9,74 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
+        [MaxLength(255)]
         [Column("email")]
-        [StringLength(255)]
         public string Email { get; set; } = string.Empty;
-        
+
+        [MaxLength(255)]
         [Column("password")]
-        [StringLength(255)]
-        public string? Password { get; set; } // Nullable for Google users
-        
+        public string? Password { get; set; }
+
         [Required]
+        [MaxLength(100)]
         [Column("first_name")]
-        [StringLength(100)]
         public string FirstName { get; set; } = string.Empty;
-        
+
         [Required]
+        [MaxLength(100)]
         [Column("last_name")]
-        [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
-        
+
+        [MaxLength(20)]
         [Column("phone_number")]
-        [StringLength(20)]
         public string? PhoneNumber { get; set; }
-        
+
+        [MaxLength(500)]
         [Column("avatar")]
-        [StringLength(500)]
         public string? Avatar { get; set; }
-        
+
         [Column("date_of_birth")]
         public DateTime? DateOfBirth { get; set; }
-        
+
+        [MaxLength(10)]
         [Column("gender")]
-        [StringLength(10)]
-        public string? Gender { get; set; } // 'male', 'female', 'other'
-        
+        public string? Gender { get; set; }
+
+        [MaxLength(500)]
         [Column("address")]
-        [StringLength(500)]
         public string? Address { get; set; }
-        
+
         [Column("is_email_verified")]
         public bool IsEmailVerified { get; set; } = false;
-        
+
         [Column("is_phone_verified")]
         public bool IsPhoneVerified { get; set; } = false;
-        
-        [Column("preferences", TypeName = "jsonb")]
-        public string? Preferences { get; set; } // JSON string for Map<String, dynamic>
-        
+
+        [Column("preferences")]
+        public string? Preferences { get; set; } // JSONB stored as string
+
         [Column("last_login_at")]
         public DateTime? LastLoginAt { get; set; }
-        
+
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
-        
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
-        [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
-        // Google Authentication fields
+
+        [MaxLength(255)]
         [Column("google_id")]
-        [StringLength(255)]
         public string? GoogleId { get; set; }
-        
+
+        [MaxLength(500)]
         [Column("google_picture")]
-        [StringLength(500)]
         public string? GooglePicture { get; set; }
-        
+
+        [MaxLength(10)]
         [Column("auth_provider")]
-        [StringLength(10)]
-        public string? AuthProvider { get; set; } = "Email"; // "Email" or "Google"
-        
-        // OTP fields
+        public string AuthProvider { get; set; } = "Email";
+
+        [MaxLength(6)]
         [Column("otp_code")]
-        [StringLength(6)]
         public string? OtpCode { get; set; }
 
         [Column("otp_expiry_time")]
@@ -95,14 +87,22 @@ namespace TechX.API.Models
 
         [Column("last_otp_request_time")]
         public DateTime? LastOtpRequestTime { get; set; }
-        
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         // Navigation properties
         public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
         public virtual ICollection<Budget> Budgets { get; set; } = new List<Budget>();
-        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = new List<CashbackTransaction>();
-        public virtual ICollection<LoyaltyPoints> LoyaltyPointsHistory { get; set; } = new List<LoyaltyPoints>();
         public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
+        public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = new List<LoyaltyPoint>();
+        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = new List<CashbackTransaction>();
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-        public virtual Settings? Settings { get; set; }
+        public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
+        public virtual Setting? Settings { get; set; }
     }
 } 

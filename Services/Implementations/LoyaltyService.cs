@@ -18,10 +18,9 @@ namespace TechX.API.Services.Implementations
         public async Task<IEnumerable<LoyaltyPointsDTO>> GetUserLoyaltyPointsAsync(int userId)
         {
             var loyaltyPoints = await _context.LoyaltyPoints
-                .Include(l => l.User)
-                .Include(l => l.Store)
                 .Where(l => l.UserId == userId)
-                .OrderByDescending(l => l.ExpiryDate)
+                .Include(l => l.Store)
+                .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
 
             return loyaltyPoints.Select(l => new LoyaltyPointsDTO
@@ -29,7 +28,7 @@ namespace TechX.API.Services.Implementations
                 Id = l.Id,
                 UserId = l.UserId,
                 StoreId = l.StoreId,
-                StoreName = l.Store?.Name,
+                StoreName = l.StoreName,
                 Points = l.Points,
                 PointsValue = l.PointsValue,
                 ExpiryDate = l.ExpiryDate,
@@ -42,19 +41,18 @@ namespace TechX.API.Services.Implementations
         public async Task<LoyaltyPointsDTO> GetLoyaltyPointsByIdAsync(int id)
         {
             var l = await _context.LoyaltyPoints
-                .Include(lp => lp.User)
-                .Include(lp => lp.Store)
-                .FirstOrDefaultAsync(lp => lp.Id == id);
+                .Include(l => l.Store)
+                .FirstOrDefaultAsync(l => l.Id == id);
 
             if (l == null)
-                throw new KeyNotFoundException($"Loyalty points with ID {id} not found");
+                throw new ArgumentException("Loyalty points not found");
 
             return new LoyaltyPointsDTO
             {
                 Id = l.Id,
                 UserId = l.UserId,
                 StoreId = l.StoreId,
-                StoreName = l.Store?.Name,
+                StoreName = l.StoreName,
                 Points = l.Points,
                 PointsValue = l.PointsValue,
                 ExpiryDate = l.ExpiryDate,
@@ -66,10 +64,11 @@ namespace TechX.API.Services.Implementations
 
         public async Task<LoyaltyPointsDTO> CreateLoyaltyPointsAsync(CreateLoyaltyPointsDTO createDto)
         {
-            var loyaltyPoints = new LoyaltyPoints
+            var loyaltyPoints = new LoyaltyPoint
             {
                 UserId = createDto.UserId,
                 StoreId = createDto.StoreId,
+                StoreName = createDto.StoreName,
                 Points = createDto.Points,
                 PointsValue = createDto.PointsValue,
                 ExpiryDate = createDto.ExpiryDate,
@@ -87,7 +86,7 @@ namespace TechX.API.Services.Implementations
         {
             var loyaltyPoints = await _context.LoyaltyPoints.FindAsync(id);
             if (loyaltyPoints == null)
-                throw new KeyNotFoundException($"Loyalty points with ID {id} not found");
+                throw new ArgumentException("Loyalty points not found");
 
             loyaltyPoints.Points = updateDto.Points ?? loyaltyPoints.Points;
             loyaltyPoints.PointsValue = updateDto.PointsValue ?? loyaltyPoints.PointsValue;

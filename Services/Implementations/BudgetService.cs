@@ -85,7 +85,6 @@ namespace TechX.API.Services.Implementations
                 CategoryName = null,
                 Amount = createDto.Amount,
                 SpentAmount = 0,
-                RemainingAmount = createDto.Amount,
                 Period = createDto.Period,
                 StartDate = createDto.StartDate,
                 EndDate = createDto.EndDate,
@@ -108,7 +107,6 @@ namespace TechX.API.Services.Implementations
             b.StartDate = updateDto.StartDate ?? b.StartDate;
             b.EndDate = updateDto.EndDate ?? b.EndDate;
             b.UpdatedAt = DateTime.UtcNow;
-            b.RemainingAmount = b.Amount - b.SpentAmount;
             await _context.SaveChangesAsync();
             return await GetBudgetByIdAsync(b.Id);
         }
@@ -127,7 +125,6 @@ namespace TechX.API.Services.Implementations
             var b = await _context.Budgets.FindAsync(id);
             if (b == null) throw new KeyNotFoundException($"Budget {id} not found");
             b.SpentAmount = spentAmount;
-            b.RemainingAmount = b.Amount - spentAmount;
             b.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return await GetBudgetByIdAsync(b.Id);

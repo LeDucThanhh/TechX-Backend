@@ -110,8 +110,8 @@ if (!string.IsNullOrEmpty(supabaseUrl))
 }
 else
 {
-    // Local development fallback
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    // Local development fallback with null safety
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Host=localhost;Database=techx_db;Username=postgres;Password=admin123;Port=5432";
     Console.WriteLine("🔵 Using local database connection");
 }
 
@@ -121,7 +121,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     try
     {
-        Console.WriteLine($"Configuring database with connection string: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
+        // Safe substring with null check
+        var connectionPreview = !string.IsNullOrEmpty(connectionString) && connectionString.Length > 50 
+            ? connectionString.Substring(0, 50) + "..." 
+            : connectionString ?? "Not configured";
+        Console.WriteLine($"Configuring database with connection string: {connectionPreview}");
         options.UseNpgsql(connectionString, 
             o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
     }

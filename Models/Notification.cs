@@ -9,39 +9,47 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
         [Column("user_id")]
         public int UserId { get; set; }
-        
+
         [Required]
+        [MaxLength(255)]
         [Column("title")]
-        [StringLength(200)]
         public string Title { get; set; } = string.Empty;
-        
+
         [Required]
+        [MaxLength(1000)]
         [Column("message")]
-        [StringLength(1000)]
         public string Message { get; set; } = string.Empty;
-        
+
         [Required]
+        [MaxLength(50)]
         [Column("type")]
-        [StringLength(50)]
-        public string Type { get; set; } = string.Empty; // 'transaction', 'budget', 'cashback', 'loyalty', 'general'
-        
-        [Column("data", TypeName = "jsonb")]
-        public string? Data { get; set; } // JSON object for additional data
-        
-        [Column("is_read")]
-        public bool IsRead { get; set; } = false;
-        
-        [Column("read_at")]
-        public DateTime? ReadAt { get; set; }
-        
+        public string Type { get; set; } = string.Empty;
+
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "unread";
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
-        // Navigation properties
+
+        [Column("data")]
+        public string? Data { get; set; }
+
+        [MaxLength(500)]
+        [Column("action_url")]
+        public string? ActionUrl { get; set; }
+
+        [Column("is_push_sent")]
+        public bool IsPushSent { get; set; } = false;
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
     }
 } 

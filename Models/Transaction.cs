@@ -9,77 +9,85 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
         [Column("user_id")]
         public int UserId { get; set; }
-        
+
         [Required]
-        [Column("amount", TypeName = "decimal(18,2)")]
-        public decimal Amount { get; set; } // > 0
-        
+        [Column("amount")]
+        public decimal Amount { get; set; }
+
         [Required]
+        [MaxLength(20)]
         [Column("type")]
-        [StringLength(20)]
-        public string Type { get; set; } = string.Empty; // 'income' or 'expense'
-        
+        public string Type { get; set; } = string.Empty; // income, expense
+
         [Required]
         [Column("category_id")]
         public int CategoryId { get; set; }
-        
+
+        [MaxLength(100)]
         [Column("category_name")]
-        [StringLength(100)]
         public string? CategoryName { get; set; }
-        
+
+        [MaxLength(500)]
         [Column("description")]
-        [StringLength(500)]
         public string? Description { get; set; }
-        
+
         [Required]
         [Column("date")]
         public DateTime Date { get; set; }
-        
+
         [Column("store_id")]
         public int? StoreId { get; set; }
-        
+
+        [MaxLength(255)]
         [Column("store_name")]
-        [StringLength(255)]
         public string? StoreName { get; set; }
-        
+
+        [MaxLength(500)]
         [Column("receipt_url")]
-        [StringLength(500)]
         public string? ReceiptUrl { get; set; }
-        
-        [Column("tags", TypeName = "jsonb")]
-        public string? Tags { get; set; } // JSON array of strings
-        
+
+        [Column("tags")]
+        public string? Tags { get; set; } // JSONB stored as string
+
         [Column("is_recurring")]
         public bool IsRecurring { get; set; } = false;
-        
+
+        [MaxLength(20)]
         [Column("recurring_type")]
-        [StringLength(20)]
-        public string? RecurringType { get; set; } // 'daily', 'weekly', 'monthly', 'yearly'
-        
-        [Column("cashback_amount", TypeName = "decimal(18,2)")]
-        public decimal? CashbackAmount { get; set; } // >= 0
-        
+        public string? RecurringType { get; set; }
+
+        [Column("cashback_amount")]
+        public decimal? CashbackAmount { get; set; }
+
         [Column("points_earned")]
-        public int? PointsEarned { get; set; } // >= 0
-        
+        public int? PointsEarned { get; set; }
+
+        [MaxLength(1000)]
         [Column("notes")]
-        [StringLength(1000)]
         public string? Notes { get; set; }
-        
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
+
         // Navigation properties
+        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
-        public virtual Store? Store { get; set; }
+
+        [ForeignKey("CategoryId")]
         public virtual Category Category { get; set; } = null!;
-        public virtual CashbackTransaction? CashbackTransaction { get; set; }
+
+        [ForeignKey("StoreId")]
+        public virtual Store? Store { get; set; }
+
+        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = new List<CashbackTransaction>();
+        public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
+        public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
     }
 } 

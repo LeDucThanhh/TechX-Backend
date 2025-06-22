@@ -9,44 +9,52 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
         [Column("user_id")]
         public int UserId { get; set; }
-        
-        [Required]
+
         [Column("store_id")]
-        public int StoreId { get; set; }
-        
+        public int? StoreId { get; set; }
+
+        [MaxLength(255)]
+        [Column("user_name")]
+        public string? UserName { get; set; }
+
+        [MaxLength(500)]
+        [Column("user_avatar")]
+        public string? UserAvatar { get; set; }
+
         [Required]
         [Column("rating")]
-        public int Rating { get; set; } // 1-5
-        
-        [Column("title")]
-        [StringLength(200)]
-        public string? Title { get; set; }
-        
+        public decimal Rating { get; set; }
+
+        [MaxLength(1000)]
         [Column("comment")]
-        [StringLength(1000)]
         public string? Comment { get; set; }
-        
-        [Column("images", TypeName = "jsonb")]
-        public string? Images { get; set; } // JSON array of strings
-        
-        [Column("is_verified_purchase")]
-        public bool IsVerifiedPurchase { get; set; } = false;
-        
-        [Column("helpful_count")]
-        public int HelpfulCount { get; set; } = 0;
-        
+
+        [Column("images")]
+        public string? Images { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
-        // Navigation properties
+
+        [Column("is_verified")]
+        public bool IsVerified { get; set; } = false;
+
+        [Column("helpful_count")]
+        public int HelpfulCount { get; set; } = 0;
+
+        [Column("is_helpful")]
+        public bool IsHelpful { get; set; } = false;
+
+        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
+
+        [ForeignKey("StoreId")]
         public virtual Store? Store { get; set; }
     }
-} 
+}

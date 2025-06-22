@@ -9,36 +9,36 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
         [Column("receipt_id")]
         public int ReceiptId { get; set; }
-        
+
         [Required]
+        [MaxLength(255)]
         [Column("name")]
-        [StringLength(255)]
         public string Name { get; set; } = string.Empty;
-        
+
         [Column("quantity")]
         public int Quantity { get; set; } = 1;
-        
+
         [Required]
-        [Column("price", TypeName = "decimal(18,2)")]
+        [Column("price")]
         public decimal Price { get; set; }
-        
+
         [Required]
-        [Column("total_price", TypeName = "decimal(18,2)")]
+        [Column("total_price")]
         public decimal TotalPrice { get; set; }
-        
+
+        [MaxLength(100)]
         [Column("category")]
-        [StringLength(100)]
         public string? Category { get; set; }
-        
+
+        [MaxLength(500)]
         [Column("description")]
-        [StringLength(500)]
         public string? Description { get; set; }
-        
-        // Navigation properties
+
+        [ForeignKey("ReceiptId")]
         public virtual Receipt Receipt { get; set; } = null!;
     }
 } 

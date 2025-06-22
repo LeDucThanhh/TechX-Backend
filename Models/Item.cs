@@ -9,66 +9,66 @@ namespace TechX.API.Models
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        
+
         [Required]
         [Column("store_id")]
         public int StoreId { get; set; }
-        
+
+        [MaxLength(255)]
         [Column("store_name")]
-        [StringLength(255)]
         public string? StoreName { get; set; }
-        
+
         [Required]
+        [MaxLength(255)]
         [Column("name")]
-        [StringLength(255)]
         public string Name { get; set; } = string.Empty;
-        
+
+        [MaxLength(1000)]
         [Column("description")]
-        [StringLength(1000)]
         public string? Description { get; set; }
-        
+
         [Required]
-        [Column("price", TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; } // >= 0
-        
-        [Column("original_price", TypeName = "decimal(18,2)")]
+        [Column("price")]
+        public decimal Price { get; set; }
+
+        [Column("original_price")]
         public decimal? OriginalPrice { get; set; }
-        
-        [Column("discount_percentage", TypeName = "decimal(5,2)")]
-        public decimal? DiscountPercentage { get; set; } // 0-100%
-        
-        [Column("images", TypeName = "jsonb")]
-        public string? Images { get; set; } // JSON array of strings
-        
+
+        [Column("discount_percentage")]
+        public decimal? DiscountPercentage { get; set; }
+
+        [Column("images")]
+        public string? Images { get; set; } // JSONB
+
+        [MaxLength(100)]
         [Column("category")]
-        [StringLength(100)]
         public string? Category { get; set; }
-        
-        [Column("tags", TypeName = "jsonb")]
-        public string? Tags { get; set; } // JSON array of strings
-        
+
+        [Column("tags")]
+        public string? Tags { get; set; } // JSONB
+
         [Column("is_available")]
         public bool IsAvailable { get; set; } = true;
-        
+
         [Column("stock_quantity")]
         public int? StockQuantity { get; set; }
-        
-        [Column("rating", TypeName = "decimal(3,2)")]
-        public decimal? Rating { get; set; } // 0-5
-        
+
+        [Column("rating")]
+        public decimal? Rating { get; set; }
+
         [Column("review_count")]
         public int? ReviewCount { get; set; }
-        
+
         [Column("is_featured")]
         public bool IsFeatured { get; set; } = false;
-        
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
-        // Navigation properties
+
+        [ForeignKey("StoreId")]
         public virtual Store Store { get; set; } = null!;
     }
 } 
