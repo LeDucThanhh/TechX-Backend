@@ -97,83 +97,25 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks (simplified)
 builder.Services.AddHealthChecks();
 
-// Add DbContext - Use Railway DATABASE_URL environment variable
-string connectionString;
+// Database Configuration
+var connectionString = "";
 
-if (builder.Environment.IsProduction())
+// SUPABASE CONNECTION (MUCH MORE RELIABLE)
+var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING");
+
+if (!string.IsNullOrEmpty(supabaseUrl))
 {
-    // Prioritize DATABASE_PUBLIC_URL for external access, fallback to DATABASE_URL
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL") ?? 
-                      Environment.GetEnvironmentVariable("DATABASE_URL");
-    
-    var isPublicUrl = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL"));
-    Console.WriteLine($"Using {(isPublicUrl ? "PUBLIC" : "INTERNAL")} database URL");
-    
-    if (!string.IsNullOrEmpty(databaseUrl))
-    {
-        Console.WriteLine($"Found Railway DATABASE_URL: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
-        
-        // Convert PostgreSQL URL to .NET connection string format
-        try
-        {
-            var uri = new Uri(databaseUrl);
-            var host = uri.Host;
-            var port = uri.Port > 0 ? uri.Port : 5432;
-            var database = uri.AbsolutePath.Trim('/');
-            
-            if (string.IsNullOrEmpty(database))
-                database = "railway"; // Default database name
-            
-            var userInfo = uri.UserInfo.Split(':');
-            var username = userInfo.Length > 0 ? userInfo[0] : "postgres";
-            var password = userInfo.Length > 1 ? userInfo[1] : "";
-            
-            // Validate required fields
-            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username))
-            {
-                throw new InvalidOperationException("Missing required database connection parameters");
-            }
-            
-            // DEBUG: Try without SSL to bypass potential SSL issues
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Disable;Timeout=30;Command Timeout=30";
-            Console.WriteLine($"✅ Successfully converted DATABASE_URL to .NET format");
-            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}, SSL: Disabled");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error parsing DATABASE_URL: {ex.Message}");
-            Console.WriteLine($"   Original URL: {databaseUrl}");
-            
-            // Fallback to individual environment variables
-            var host = Environment.GetEnvironmentVariable("PGHOST") ?? "postgres.railway.internal";
-            var database = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
-            var username = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
-            var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
-            var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-            
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Disable;Timeout=30;Command Timeout=30";
-            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}, SSL: Disabled");
-        }
-    }
-    else
-    {
-        Console.WriteLine("DATABASE_URL not found, trying individual environment variables...");
-        // Try individual environment variables as fallback
-        var host = Environment.GetEnvironmentVariable("PGHOST") ?? "postgres.railway.internal";
-        var database = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
-        var username = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
-        var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
-        var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-        
-        connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
-        Console.WriteLine($"Using individual env vars: Host={host}, Database={database}, Port={port}");
-    }
+    connectionString = supabaseUrl;
+    Console.WriteLine("🟢 Using SUPABASE database connection");
 }
 else
 {
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("DefaultConnection not found in configuration.");
+    // Local development fallback
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine("🔵 Using local database connection");
 }
+
+Console.WriteLine($"✅ Database connection configured successfully");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
