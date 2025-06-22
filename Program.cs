@@ -230,24 +230,24 @@ app.MapHealthChecks("/health");
 
 app.MapControllers();
 
+// Skip migrations for now - using existing Supabase database
 // Apply database migrations automatically for Railway deployment
 try
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     
-    // Only run migrations in production (Railway)
-    if (app.Environment.IsProduction())
-    {
-        Log.Information("Running database migrations for production...");
-        context.Database.Migrate();
-        Log.Information("Database migrations completed successfully.");
-    }
+    // Skip migrations - using existing Supabase database with tables already created
+    Log.Information("Skipping migrations - using existing Supabase database");
+    
+    // Test database connection
+    context.Database.CanConnect();
+    Log.Information("Database connection test successful");
 }
 catch (Exception ex)
 {
-    Log.Error(ex, "An error occurred while applying database migrations: {ErrorMessage}", ex.Message);
-    // Don't crash the app, let it continue without migrations
+    Log.Error(ex, "Database connection error: {ErrorMessage}", ex.Message);
+    // Continue without crashing
 }
 
 // Configure port for Railway deployment (only in production and when PORT env var is set)
