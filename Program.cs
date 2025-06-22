@@ -130,7 +130,7 @@ if (builder.Environment.IsProduction())
                 throw new InvalidOperationException("Missing required database connection parameters");
             }
             
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30";
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
             Console.WriteLine($"✅ Successfully converted DATABASE_URL to .NET format");
             Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}");
         }
@@ -138,16 +138,30 @@ if (builder.Environment.IsProduction())
         {
             Console.WriteLine($"❌ Error parsing DATABASE_URL: {ex.Message}");
             Console.WriteLine($"   Original URL: {databaseUrl}");
-            // Fallback to hardcoded connection
-            connectionString = "Host=postgres.railway.internal;Database=railway;Username=postgres;Password=QvTwobWAnPApraKSyHULicWOsfbokigo;Port=5432;SSL Mode=Require;Trust Server Certificate=true;Timeout=30";
-            Console.WriteLine("   Using fallback connection string");
+            
+            // Fallback to individual environment variables
+            var host = Environment.GetEnvironmentVariable("PGHOST") ?? "postgres.railway.internal";
+            var database = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
+            var username = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
+            var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
+            var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+            
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}");
         }
     }
     else
     {
-        // Fallback to hardcoded connection
-        connectionString = "Host=postgres.railway.internal;Database=railway;Username=postgres;Password=QvTwobWAnPApraKSyHULicWOsfbokigo;Port=5432;SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("DATABASE_URL not found, using fallback connection string");
+        Console.WriteLine("DATABASE_URL not found, trying individual environment variables...");
+        // Try individual environment variables as fallback
+        var host = Environment.GetEnvironmentVariable("PGHOST") ?? "postgres.railway.internal";
+        var database = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway";
+        var username = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
+        var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
+        var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+        
+        connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+        Console.WriteLine($"Using individual env vars: Host={host}, Database={database}, Port={port}");
     }
 }
 else
