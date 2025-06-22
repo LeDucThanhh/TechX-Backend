@@ -179,23 +179,41 @@ if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith(
 {
     try
     {
+        Console.WriteLine($"🔄 Converting PostgreSQL URL: {connectionString.Substring(0, 30)}...");
+        
         var uri = new Uri(connectionString);
         var host = uri.Host;
         var port = uri.Port > 0 ? uri.Port : 5432;
         var database = uri.AbsolutePath.TrimStart('/');
-        var userInfo = uri.UserInfo.Split(':');
-        var username = userInfo.Length > 0 ? userInfo[0] : "";
-        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        // Better parsing of user info
+        var username = "";
+        var password = "";
+        
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+        {
+            var userInfo = uri.UserInfo.Split(':');
+            username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+            password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+            
+            Console.WriteLine($"📝 Parsed - Host: {host}, Username: {username}, Password: {(!string.IsNullOrEmpty(password) ? "***PROVIDED***" : "MISSING")}");
+        }
+        
+        // Validate that we have all required components
+        if (string.IsNullOrEmpty(password))
+        {
+            throw new InvalidOperationException("Password not found in PostgreSQL URL");
+        }
         
         connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("🔄 Converted PostgreSQL URL to .NET connection string format");
+        Console.WriteLine("✅ Successfully converted PostgreSQL URL to .NET connection string format");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"⚠️ Error converting connection string: {ex.Message}");
-        // Fall back to hardcoded connection
+        // Fall back to hardcoded connection with correct password
         connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("🔴 Using fallback hardcoded connection");
+        Console.WriteLine("🔴 Using fallback hardcoded connection with password");
     }
 }
 
@@ -219,6 +237,14 @@ catch (Exception ex)
 }
 
 Console.WriteLine($"✅ Database connection configured successfully");
+
+// Final validation - ensure connection string has password
+if (!connectionString.Contains("Password=") || connectionString.Contains("Password=;"))
+{
+    Console.WriteLine("❌ CRITICAL: Connection string missing password! Using emergency fallback.");
+    connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine("✅ Emergency fallback connection string applied with password");
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
