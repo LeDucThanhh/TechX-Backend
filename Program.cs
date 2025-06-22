@@ -185,16 +185,13 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-// Disable Swagger in production for security and focus on API functionality
-if (app.Environment.IsDevelopment())
+// Enable Swagger for debugging in production
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TechX API v1");
+    c.RoutePrefix = "swagger";
+});
 
 if (!app.Environment.IsDevelopment())
 {
