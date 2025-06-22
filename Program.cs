@@ -241,10 +241,10 @@ catch (Exception ex)
 
 Console.WriteLine($"✅ Database connection configured successfully");
 
-// FORCE CORRECT CONNECTION STRING - SIMPLE FIX
+// FORCE CORRECT CONNECTION STRING - PROPER SSL FOR SUPABASE
 Console.WriteLine("🔧 Applying production connection string fix");
-connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
-Console.WriteLine("✅ Production connection string applied successfully");
+connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30;";
+Console.WriteLine("✅ Production connection string applied successfully (with proper SSL)");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -256,10 +256,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(connectionString, npgsqlOptions =>
         {
             npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-            npgsqlOptions.CommandTimeout(30); // 30 seconds timeout
+            npgsqlOptions.CommandTimeout(60); // Increase timeout to 60 seconds
             npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
+                maxRetryCount: 1, // Reduce retry count
+                maxRetryDelay: TimeSpan.FromSeconds(3),
                 errorCodesToAdd: null);
         });
         
