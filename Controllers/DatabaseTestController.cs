@@ -20,35 +20,115 @@ namespace TechX.API.Controllers
         {
             try
             {
-                // Test connection by running a simple query
+                Console.WriteLine("🔍 Database health check requested...");
+                
+                // Get connection string information (without password)
+                var connectionString = _context.Database.GetConnectionString();
+                var connectionInfo = "Not available";
+                
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    try
+                    {
+                        var parts = connectionString.Split(';');
+                        var safeParts = parts.Where(p => !p.StartsWith("Password=", StringComparison.OrdinalIgnoreCase))
+                                             .Where(p => !p.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase));
+                        connectionInfo = string.Join(";", safeParts);
+                    }
+                    catch
+                    {
+                        connectionInfo = "Connection string parsing failed";
+                    }
+                }
+                
+                Console.WriteLine($"Connection info: {connectionInfo}");
+                
+                // Test connection
                 var canConnect = await _context.Database.CanConnectAsync();
                 
                 if (!canConnect)
                 {
+                    Console.WriteLine("❌ Cannot connect to database");
                     return StatusCode(500, new
                     {
                         success = false,
                         message = "Cannot connect to database",
-                        timestamp = DateTime.UtcNow
+                        connectionInfo = connectionInfo,
+                        timestamp = DateTime.UtcNow,
+                        environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
                     });
+                }
+                
+                Console.WriteLine("✅ Database connection successful");
+                
+                // Test table access
+                var diagnostics = new Dictionary<string, object>();
+                
+                try
+                {
+                    var userCount = await _context.Users.CountAsync();
+                    diagnostics["userCount"] = userCount;
+                    Console.WriteLine($"Users table: {userCount} records");
+                }
+                catch (Exception ex)
+                {
+                    diagnostics["userCount"] = $"Error: {ex.Message}";
+                    Console.WriteLine($"Users table error: {ex.Message}");
+                }
+                
+                try
+                {
+                    var categoryCount = await _context.Categories.CountAsync();
+                    diagnostics["categoryCount"] = categoryCount;
+                    Console.WriteLine($"Categories table: {categoryCount} records");
+                }
+                catch (Exception ex)
+                {
+                    diagnostics["categoryCount"] = $"Error: {ex.Message}";
+                    Console.WriteLine($"Categories table error: {ex.Message}");
+                }
+                
+                try
+                {
+                    var storeCount = await _context.Stores.CountAsync();
+                    diagnostics["storeCount"] = storeCount;
+                    Console.WriteLine($"Stores table: {storeCount} records");
+                }
+                catch (Exception ex)
+                {
+                    diagnostics["storeCount"] = $"Error: {ex.Message}";
+                    Console.WriteLine($"Stores table error: {ex.Message}");
                 }
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Database connection successful",
+                    message = "Database connection and table access successful",
+                    connectionInfo = connectionInfo,
+                    diagnostics = diagnostics,
                     timestamp = DateTime.UtcNow,
-                    database = "Supabase PostgreSQL"
+                    database = "Supabase PostgreSQL",
+                    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Database health check failed: {ex.Message}");
+                Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
                 return StatusCode(500, new
                 {
                     success = false,
                     message = "Database health check failed",
                     error = ex.Message,
-                    timestamp = DateTime.UtcNow
+                    errorType = ex.GetType().Name,
+                    innerError = ex.InnerException?.Message,
+                    timestamp = DateTime.UtcNow,
+                    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
                 });
             }
         }
@@ -151,6 +231,22 @@ namespace TechX.API.Controllers
                     timestamp = DateTime.UtcNow
                 });
             }
+        }
+
+        // Simple connectivity test without database dependency
+        [HttpGet("ping")]
+        public ActionResult Ping()
+        {
+            return Ok(new
+            {
+                success = true,
+                message = "API is running and responding correctly",
+                timestamp = DateTime.UtcNow,
+                server = "TechX Backend API",
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+                methods_supported = new[] { "GET", "POST", "PUT", "DELETE" },
+                version = "1.0.0"
+            });
         }
     }
 } 

@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +82,39 @@ builder.Services.AddHttpContextAccessor();
 // Add Memory Cache
 builder.Services.AddMemoryCache();
 
+// Add JWT Authentication (CRITICAL FIX for 405 errors)
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.RequireHttpsMetadata = false; // For development/production flexibility
+        options.SaveToken = true;
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = false, // We'll handle this in JWT middleware  
+            ValidateAudience = false, // We'll handle this in JWT middleware
+            ValidateLifetime = false, // We'll handle this in JWT middleware
+            ValidateIssuerSigningKey = false, // We'll handle this in JWT middleware
+            ClockSkew = TimeSpan.Zero
+        };
+        
+        // Don't validate tokens here, let our custom JWT middleware handle it
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse(); // Prevent default 401 challenge
+                return Task.CompletedTask;
+            },
+            OnForbidden = context =>
+            {
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+// Add Authorization
+builder.Services.AddAuthorization();
+
 // Add Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -100,20 +135,87 @@ builder.Services.AddHealthChecks();
 // Database Configuration
 var connectionString = "";
 
-// SUPABASE CONNECTION (MUCH MORE RELIABLE)
-var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING") 
-                  ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+// Try multiple environment variable names for Railway deployment
+var railwayUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING");
+var customUrl = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection");
 
+Console.WriteLine("🔍 Checking environment variables...");
+Console.WriteLine($"DATABASE_URL: {(!string.IsNullOrEmpty(railwayUrl) ? "Found" : "Not found")}");
+Console.WriteLine($"SUPABASE_CONNECTION_STRING: {(!string.IsNullOrEmpty(supabaseUrl) ? "Found" : "Not found")}");
+Console.WriteLine($"CUSTOMCONNSTR_DefaultConnection: {(!string.IsNullOrEmpty(customUrl) ? "Found" : "Not found")}");
+
+// Priority order: SUPABASE_CONNECTION_STRING -> DATABASE_URL -> Custom -> Hardcoded
 if (!string.IsNullOrEmpty(supabaseUrl))
 {
     connectionString = supabaseUrl;
-    Console.WriteLine("🟢 Using SUPABASE database connection");
+    Console.WriteLine("🟢 Using SUPABASE_CONNECTION_STRING");
+}
+else if (!string.IsNullOrEmpty(railwayUrl))
+{
+    connectionString = railwayUrl;
+    Console.WriteLine("🟡 Using DATABASE_URL");
+}
+else if (!string.IsNullOrEmpty(customUrl))
+{
+    connectionString = customUrl;
+    Console.WriteLine("🟠 Using CUSTOMCONNSTR_DefaultConnection");
 }
 else
 {
     // PRODUCTION FALLBACK - hardcoded Supabase connection
-    connectionString = "postgresql://postgres:YEDrCrRUuOkT6LQE@db.rvkrhsfkcfawmobywexf.supabase.co:5432/postgres";
-    Console.WriteLine("🟡 Using hardcoded Supabase connection");
+    connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine("🔴 Using hardcoded Supabase connection");
+}
+
+// Validate connection string
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("❌ No database connection string found!");
+}
+
+// Convert PostgreSQL URL format to .NET connection string format if needed
+if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
+{
+    try
+    {
+        var uri = new Uri(connectionString);
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo.Length > 0 ? userInfo[0] : "";
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine("🔄 Converted PostgreSQL URL to .NET connection string format");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Error converting connection string: {ex.Message}");
+        // Fall back to hardcoded connection
+        connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine("🔴 Using fallback hardcoded connection");
+    }
+}
+
+// Log connection string preview (without password)
+try
+{
+    var connectionPreview = connectionString.Length > 20 
+        ? connectionString.Substring(0, 20) + "..."
+        : connectionString;
+    if (connectionString.Contains("Password="))
+    {
+        var parts = connectionString.Split(';');
+        var safeConnString = string.Join(";", parts.Where(p => !p.StartsWith("Password=")));
+        connectionPreview = safeConnString.Length > 50 ? safeConnString.Substring(0, 50) + "..." : safeConnString;
+    }
+    Console.WriteLine($"📝 Connection string preview: {connectionPreview}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Error creating connection preview: {ex.Message}");
 }
 
 Console.WriteLine($"✅ Database connection configured successfully");
@@ -122,17 +224,35 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     try
     {
-        // Safe substring with null check
-        var connectionPreview = !string.IsNullOrEmpty(connectionString) && connectionString.Length > 50 
-            ? connectionString.Substring(0, 50) + "..." 
-            : connectionString ?? "Not configured";
-        Console.WriteLine($"Configuring database with connection string: {connectionPreview}");
-        options.UseNpgsql(connectionString, 
-            o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        Console.WriteLine("🔧 Configuring Entity Framework DbContext...");
+        
+        // Configure Npgsql with connection string
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+            npgsqlOptions.CommandTimeout(30); // 30 seconds timeout
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null);
+        });
+        
+        // Enable sensitive data logging in development
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors();
+        }
+        
+        // Configure logging
+        options.LogTo(Console.WriteLine, LogLevel.Information);
+        
+        Console.WriteLine("✅ DbContext configured successfully");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database configuration error: {ex.Message}");
+        Console.WriteLine($"❌ Database configuration error: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         throw;
     }
 });
@@ -212,43 +332,79 @@ app.UseHttpsRedirection();
 // Use Serilog request logging
 app.UseSerilogRequestLogging();
 
-// Use Rate Limiting
-app.UseRateLimiter();
-
-// Use CORS with more restrictive policy
+// Use CORS first (before authentication)
 app.UseCors("DefaultPolicy");
 
-// Use custom exception handling middleware
-app.UseMiddleware<ExceptionMiddleware>();
+// Use Rate Limiting AFTER CORS but BEFORE Authentication
+app.UseRateLimiter();
 
-// Use JWT authentication middleware
-app.UseMiddleware<JwtMiddleware>();
+// Add missing UseAuthentication() - CRITICAL FIX for 405 errors
+app.UseAuthentication();
 
+// Use authorization AFTER authentication
 app.UseAuthorization();
 
-// Map health checks
+// Use JWT middleware AFTER standard authentication to handle custom JWT logic
+app.UseMiddleware<JwtMiddleware>();
+
+// Use custom exception handling middleware AFTER auth
+app.UseMiddleware<ExceptionMiddleware>();
+
+// Map health checks BEFORE controllers
 app.MapHealthChecks("/health");
 
+// Map controllers LAST
 app.MapControllers();
 
-// Skip migrations for now - using existing Supabase database
-// Apply database migrations automatically for Railway deployment
+// Database connection test and diagnostics
 try
 {
+    Console.WriteLine("🧪 Testing database connection...");
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     
-    // Skip migrations - using existing Supabase database with tables already created
-    Log.Information("Skipping migrations - using existing Supabase database");
-    
-    // Test database connection
-    context.Database.CanConnect();
-    Log.Information("Database connection test successful");
+    // Test basic connection
+    var canConnect = await context.Database.CanConnectAsync();
+    if (canConnect)
+    {
+        Console.WriteLine("✅ Database connection test successful!");
+        
+        // Test a simple query to make sure tables exist
+        try
+        {
+            var userCount = await context.Users.CountAsync();
+            Console.WriteLine($"📊 Database contains {userCount} users");
+            
+            var categoryCount = await context.Categories.CountAsync();
+            Console.WriteLine($"📊 Database contains {categoryCount} categories");
+            
+            Log.Information("Database connection and tables verified successfully");
+        }
+        catch (Exception queryEx)
+        {
+            Console.WriteLine($"⚠️ Database connected but table query failed: {queryEx.Message}");
+            Log.Warning(queryEx, "Database connected but queries failed - tables may not exist");
+        }
+    }
+    else
+    {
+        Console.WriteLine("❌ Database connection test failed - CanConnect returned false");
+        Log.Error("Database connection test failed");
+    }
 }
 catch (Exception ex)
 {
-    Log.Error(ex, "Database connection error: {ErrorMessage}", ex.Message);
-    // Continue without crashing
+    Console.WriteLine($"❌ Database connection error: {ex.GetType().Name}: {ex.Message}");
+    if (ex.InnerException != null)
+    {
+        Console.WriteLine($"   Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+    }
+    Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+    
+    Log.Error(ex, "Database connection error during startup: {ErrorMessage}", ex.Message);
+    
+    // Don't crash the application - continue without database for now
+    Console.WriteLine("⚠️ Application will continue without database connectivity");
 }
 
 // Configure port for Railway deployment (only in production and when PORT env var is set)
