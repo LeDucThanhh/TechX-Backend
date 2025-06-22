@@ -134,11 +134,10 @@ if (builder.Environment.IsProduction())
                 throw new InvalidOperationException("Missing required database connection parameters");
             }
             
-            // Use appropriate SSL mode for public vs internal connections
-            var sslMode = isPublicUrl ? "Require" : "Prefer";
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode={sslMode};Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+            // DEBUG: Try without SSL to bypass potential SSL issues
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Disable;Timeout=30;Command Timeout=30";
             Console.WriteLine($"✅ Successfully converted DATABASE_URL to .NET format");
-            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}, SSL: {sslMode}");
+            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}, SSL: Disabled");
         }
         catch (Exception ex)
         {
@@ -152,9 +151,8 @@ if (builder.Environment.IsProduction())
             var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
             var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
             
-            var sslMode = isPublicUrl ? "Require" : "Prefer";
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode={sslMode};Trust Server Certificate=true;Timeout=30;Command Timeout=30";
-            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}, SSL: {sslMode}");
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Disable;Timeout=30;Command Timeout=30";
+            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}, SSL: Disabled");
         }
     }
     else
