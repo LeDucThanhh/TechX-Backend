@@ -102,8 +102,12 @@ string connectionString;
 
 if (builder.Environment.IsProduction())
 {
-    // Get DATABASE_URL from Railway environment variables and convert to .NET format
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    // Prioritize DATABASE_PUBLIC_URL for external access, fallback to DATABASE_URL
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL") ?? 
+                      Environment.GetEnvironmentVariable("DATABASE_URL");
+    
+    var isPublicUrl = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL"));
+    Console.WriteLine($"Using {(isPublicUrl ? "PUBLIC" : "INTERNAL")} database URL");
     
     if (!string.IsNullOrEmpty(databaseUrl))
     {
@@ -130,9 +134,11 @@ if (builder.Environment.IsProduction())
                 throw new InvalidOperationException("Missing required database connection parameters");
             }
             
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+            // Use appropriate SSL mode for public vs internal connections
+            var sslMode = isPublicUrl ? "Require" : "Prefer";
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode={sslMode};Trust Server Certificate=true;Timeout=30;Command Timeout=30";
             Console.WriteLine($"✅ Successfully converted DATABASE_URL to .NET format");
-            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}");
+            Console.WriteLine($"   Host: {host}, Database: {database}, Username: {username}, Port: {port}, SSL: {sslMode}");
         }
         catch (Exception ex)
         {
@@ -146,8 +152,9 @@ if (builder.Environment.IsProduction())
             var password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "QvTwobWAnPApraKSyHULicWOsfbokigo";
             var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
             
-            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
-            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}");
+            var sslMode = isPublicUrl ? "Require" : "Prefer";
+            connectionString = $"Host={host};Database={database};Username={username};Password={password};Port={port};SSL Mode={sslMode};Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+            Console.WriteLine($"   Using fallback env vars: Host={host}, Database={database}, Port={port}, SSL: {sslMode}");
         }
     }
     else
