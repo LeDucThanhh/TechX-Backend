@@ -45,8 +45,8 @@ namespace TechX.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
-        public virtual ICollection<Budget> Budgets { get; set; } = new List<Budget>();
+        // Navigation properties - no initialization to avoid EF conflicts
+        public virtual ICollection<Transaction> Transactions { get; set; } = null!;
+        public virtual ICollection<Budget> Budgets { get; set; } = null!;
     }
 } 

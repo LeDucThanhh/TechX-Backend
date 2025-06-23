@@ -94,15 +94,15 @@ namespace TechX.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
-        public virtual ICollection<Budget> Budgets { get; set; } = new List<Budget>();
-        public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
-        public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = new List<LoyaltyPoint>();
-        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = new List<CashbackTransaction>();
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-        public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
+        // Navigation properties - no initialization to avoid EF conflicts
+        public virtual ICollection<Transaction> Transactions { get; set; } = null!;
+        public virtual ICollection<Budget> Budgets { get; set; } = null!;
+        public virtual ICollection<Receipt> Receipts { get; set; } = null!;
+        public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = null!;
+        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = null!;
+        public virtual ICollection<Review> Reviews { get; set; } = null!;
+        public virtual ICollection<Notification> Notifications { get; set; } = null!;
+        public virtual ICollection<UserVoucher> UserVouchers { get; set; } = null!;
         public virtual Setting? Settings { get; set; }
     }
 } 

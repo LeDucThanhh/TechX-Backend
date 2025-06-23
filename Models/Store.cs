@@ -80,13 +80,13 @@ namespace TechX.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
-        public virtual ICollection<Item> Items { get; set; } = new List<Item>();
-        public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
-        public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = new List<LoyaltyPoint>();
-        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = new List<CashbackTransaction>();
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-        public virtual ICollection<Voucher> Vouchers { get; set; } = new List<Voucher>();
+        // Navigation properties - no initialization to avoid EF conflicts
+        public virtual ICollection<Transaction> Transactions { get; set; } = null!;
+        public virtual ICollection<Item> Items { get; set; } = null!;
+        public virtual ICollection<Receipt> Receipts { get; set; } = null!;
+        public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = null!;
+        public virtual ICollection<CashbackTransaction> CashbackTransactions { get; set; } = null!;
+        public virtual ICollection<Review> Reviews { get; set; } = null!;
+        public virtual ICollection<Voucher> Vouchers { get; set; } = null!;
     }
 } 

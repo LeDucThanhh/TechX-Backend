@@ -135,39 +135,62 @@ builder.Services.AddHealthChecks();
 // Database Configuration
 var connectionString = "";
 
-// Try multiple environment variable names for Railway deployment
-var railwayUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+// Check for environment variables
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_CONNECTION_STRING");
-var customUrl = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_DefaultConnection");
 
 Console.WriteLine("🔍 Checking environment variables...");
-Console.WriteLine($"DATABASE_URL: {(!string.IsNullOrEmpty(railwayUrl) ? "Found" : "Not found")}");
+Console.WriteLine($"DATABASE_URL: {(!string.IsNullOrEmpty(databaseUrl) ? "Found" : "Not found")}");
 Console.WriteLine($"SUPABASE_CONNECTION_STRING: {(!string.IsNullOrEmpty(supabaseUrl) ? "Found" : "Not found")}");
-Console.WriteLine($"CUSTOMCONNSTR_DefaultConnection: {(!string.IsNullOrEmpty(customUrl) ? "Found" : "Not found")}");
 
-// Priority order: SUPABASE_CONNECTION_STRING -> DATABASE_URL -> Custom -> Hardcoded
+// Priority: Environment variables -> Configuration file
 if (!string.IsNullOrEmpty(supabaseUrl))
 {
     connectionString = supabaseUrl;
-    Console.WriteLine("🟢 Using SUPABASE_CONNECTION_STRING");
-    Console.WriteLine($"🔍 Original URL: {supabaseUrl}");
+    Console.WriteLine("🟢 Using SUPABASE_CONNECTION_STRING from environment");
 }
-else if (!string.IsNullOrEmpty(railwayUrl))
+else if (!string.IsNullOrEmpty(databaseUrl))
 {
-    connectionString = railwayUrl;
-    Console.WriteLine("🟡 Using DATABASE_URL");
-    Console.WriteLine($"🔍 Original URL: {railwayUrl}");
-}
-else if (!string.IsNullOrEmpty(customUrl))
-{
-    connectionString = customUrl;
-    Console.WriteLine("🟠 Using CUSTOMCONNSTR_DefaultConnection");
+    connectionString = databaseUrl;
+    Console.WriteLine("🟡 Using DATABASE_URL from environment");
 }
 else
 {
-    // PRODUCTION FALLBACK - hardcoded Supabase connection
-    connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
-    Console.WriteLine("🔴 Using hardcoded Supabase connection");
+    // Use from configuration file
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
+    Console.WriteLine("🟠 Using DefaultConnection from configuration file");
+}
+
+// Convert PostgreSQL URL format to .NET connection string format if needed
+if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
+{
+    Console.WriteLine("🔄 Converting PostgreSQL URL to .NET format...");
+    
+    try
+    {
+        var uri = new Uri(connectionString);
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        
+        var username = "";
+        var password = "";
+        
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+        {
+            var userInfo = uri.UserInfo.Split(':');
+            username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+            password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        }
+        
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30";
+        Console.WriteLine($"✅ URL conversion completed - Username: {username}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ URL parsing failed: {ex.Message}");
+        throw new InvalidOperationException($"Failed to parse database URL: {ex.Message}");
+    }
 }
 
 // Validate connection string
@@ -176,75 +199,7 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("❌ No database connection string found!");
 }
 
-// SIMPLIFIED: Always use the direct connection string conversion
-// If it's a PostgreSQL URL, convert it. If not, use as-is.
-if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
-{
-    Console.WriteLine("🔄 Converting PostgreSQL URL to .NET format...");
-    
-    // DIRECT REPLACEMENT - much simpler and more reliable
-    if (connectionString.Contains("postgres:YEDrCrRUuOkT6LQE@db.rvkrhsfkcfawmobywexf.supabase.co"))
-    {
-        connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("✅ Used direct replacement for known Supabase URL");
-    }
-    else
-    {
-        // Generic conversion as fallback
-        try
-        {
-            var uri = new Uri(connectionString);
-            var host = uri.Host;
-            var port = uri.Port > 0 ? uri.Port : 5432;
-            var database = uri.AbsolutePath.TrimStart('/');
-            
-            var username = "";
-            var password = "";
-            
-            if (!string.IsNullOrEmpty(uri.UserInfo))
-            {
-                var userInfo = uri.UserInfo.Split(':');
-                username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
-                password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
-            }
-            
-            connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
-            Console.WriteLine($"✅ Generic URL conversion completed - Password: {(!string.IsNullOrEmpty(password) ? "Present" : "MISSING")}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ URL parsing failed: {ex.Message}");
-            connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true";
-            Console.WriteLine("🆘 Emergency fallback applied");
-        }
-    }
-}
-
-// Log connection string preview (without password)
-try
-{
-    var connectionPreview = connectionString.Length > 20 
-        ? connectionString.Substring(0, 20) + "..."
-        : connectionString;
-    if (connectionString.Contains("Password="))
-    {
-        var parts = connectionString.Split(';');
-        var safeConnString = string.Join(";", parts.Where(p => !p.StartsWith("Password=")));
-        connectionPreview = safeConnString.Length > 50 ? safeConnString.Substring(0, 50) + "..." : safeConnString;
-    }
-    Console.WriteLine($"📝 Connection string preview: {connectionPreview}");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"⚠️ Error creating connection preview: {ex.Message}");
-}
-
 Console.WriteLine($"✅ Database connection configured successfully");
-
-// FORCE CORRECT CONNECTION STRING - PROPER SSL FOR SUPABASE
-Console.WriteLine("🔧 Applying production connection string fix");
-connectionString = "Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true;Timeout=30;Command Timeout=30;";
-Console.WriteLine("✅ Production connection string applied successfully (with proper SSL)");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {

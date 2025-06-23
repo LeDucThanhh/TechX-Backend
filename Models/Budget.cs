@@ -42,10 +42,10 @@ namespace TechX.API.Models
         [Column("spent_amount")]
         public decimal SpentAmount { get; set; } = 0;
 
-        // Note: remaining_amount is a computed column in database, so we make it read-only
+        // Computed column - allow both get and set to avoid EF issues
         [Column("remaining_amount")]
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public decimal RemainingAmount { get; private set; }
+        public decimal RemainingAmount { get; set; }
 
         [Column("alerts")]
         public string? Alerts { get; set; } // JSONB stored as string
@@ -59,7 +59,7 @@ namespace TechX.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
+        // Navigation properties - no initialization to avoid EF conflicts
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
 

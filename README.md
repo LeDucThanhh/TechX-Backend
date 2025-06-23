@@ -42,7 +42,13 @@ dotnet restore
 Set environment variable:
 
 ```bash
-SUPABASE_CONNECTION_STRING="postgresql://postgres:admin123@db.rvkrhsfkcfawmobywexf.supabase.co:5432/postgres"
+SUPABASE_CONNECTION_STRING="Host=db.rvkrhsfkcfawmobywexf.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YEDrCrRUuOkT6LQE;SSL Mode=Require;Trust Server Certificate=true"
+```
+
+Or PostgreSQL URL format (will be auto-converted):
+
+```bash
+SUPABASE_CONNECTION_STRING="postgresql://postgres:YEDrCrRUuOkT6LQE@db.rvkrhsfkcfawmobywexf.supabase.co:5432/postgres"
 ```
 
 ### 3. **Run Application**
